@@ -110,8 +110,7 @@ HttpResponse *DiscordSocket::rcvData()
     int len=100;
     char buffer[100000];
     std::string packet("");
-    int endPos = -1;
-    int totalRead = 0;
+    long unsigned int totalRead = 0;
     bool hasContentLengthHeader = false;
     int contentLength = 0;
     

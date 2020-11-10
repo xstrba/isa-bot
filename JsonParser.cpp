@@ -19,7 +19,7 @@ int processFirstArrayValue(std::string json, JsonValue *jsonValue)
         return 1;
     }
 
-    int i = 1;
+    unsigned long i = 1;
     bool isProcessingValue = false;
     while (i < json.length())
     {
@@ -42,7 +42,7 @@ int processFirstArrayValue(std::string json, JsonValue *jsonValue)
         else if (json[i] == '"' && !isProcessingValue)
         {
             std::string stringValue = "";
-            int k = i + 1;
+            unsigned long k = i + 1;
             bool hasInnerSlash = false;
             while (k < json.length())
             {
@@ -84,9 +84,12 @@ int processFirstArrayValue(std::string json, JsonValue *jsonValue)
             values.push_back(newValue);
             continue;
         }
-        else if (json[i] == ',' && json[i + 1] == ' ' && !isProcessingValue)
+        else if (json[i] == ',' && !isProcessingValue)
         {
-            i += 2;
+            i++;
+            while(json[i] == ' ') {
+                i++;
+            }
             continue;
         }
         else if (json[i] == ']' && !isProcessingValue)
@@ -97,7 +100,7 @@ int processFirstArrayValue(std::string json, JsonValue *jsonValue)
         else
         {
             std::string stringValue = "";
-            int commaIndex = json.find(", ", i);
+            int commaIndex = json.find(",", i);
             int arrayEndIndex = json.find("]", i);
             if (commaIndex >= 0 && commaIndex < arrayEndIndex)
             {
@@ -135,12 +138,11 @@ int processFirstObjectValue(std::string json, JsonValue *jsonValue)
         return 1;
     }
 
-    long unsigned int i = 1;
+    unsigned long i = 1;
     bool isProcessingValue = false;
     bool isProcessingKey = false;
     bool isKey = false;
     bool hasSlash = false;
-    bool hasQuotation = false;
     std::string stringValue = "";
     std::string key = "";
     while (i < json.length())
@@ -179,9 +181,13 @@ int processFirstObjectValue(std::string json, JsonValue *jsonValue)
             key = "";
         }
 
-        if (!isProcessingKey && !isProcessingValue && json[i] == ':' && json[i + 1] == ' ')
+        if (!isProcessingKey && !isProcessingValue && json[i] == ':')
         {
-            i += 2;
+            i++;
+            while(json[i] == ' ') {
+                i++;
+            }
+
             isProcessingKey = false;
             stringValue = "";
             JsonValue *newValue = new JsonValue();
@@ -216,7 +222,7 @@ int processFirstObjectValue(std::string json, JsonValue *jsonValue)
             }
             else if (json[i] == '"')
             {
-                int k = i + 1;
+                unsigned long k = i + 1;
                 bool hasInnerSlash = false;
                 while (k < json.length())
                 {
@@ -259,12 +265,13 @@ int processFirstObjectValue(std::string json, JsonValue *jsonValue)
             else
             {
                 // take string to next comma
-                int commaIndex = json.find(", ", i);
+                int commaIndex = json.find(",", i);
                 int endObjectIndex = json.find("}", i);
                 if (commaIndex >= 0 && commaIndex < endObjectIndex)
                 {
                     stringValue = json.substr(i, commaIndex - i);
                     i = commaIndex;
+
                 }
                 else
                 {
@@ -283,7 +290,10 @@ int processFirstObjectValue(std::string json, JsonValue *jsonValue)
         if (json[i] == ',' && !isProcessingKey && !isProcessingValue)
         {
             isKey = false;
-            i += 2;
+            i ++;
+            while (json[i] == ' ') {
+                i++;
+            }
 
             continue;
         }

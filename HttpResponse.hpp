@@ -5,7 +5,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <unordered_map> 
+#include <unordered_map>
+#include <limits.h>
 #include "JsonValue.hpp"
 #include "JsonParser.hpp"
 
