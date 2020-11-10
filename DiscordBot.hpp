@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <string>
 #include "DiscordSocket.hpp"
-#include "Message.hpp"
 
 /**
  * @enum DBotErrors
@@ -24,11 +23,27 @@ enum DBotErrors {
     DBOT_ERR_SERVER_INTERNAL = 500,
 };
 
+/**
+ * DiscordBot class
+ * 
+ * Object with interface for communicating with discord server through their api
+ * with the help of DiscordSocket object. Providing functions like getting isa-bot channel id,
+ * loading new messages and sending responses to new messages.
+ * 
+ * @param DiscordSocket *socket socket for sending requests and receiving responses
+ * @param std::string token bot token
+ * @param std::string channelId id of isa-bot channel on server bot is added to
+ * @param std::string guildId id of server bot is added to
+ * @param std::string lastMsgId id of last message in channel
+ * @param bool verbose true if bot should print messages to console
+ * @param DBotErrors errorCode error code set in case some error happens
+ * @param std::vector<JsonValue *> messages loaded new messages
+ */
 class DiscordBot
 {
     public:
         /**
-         * Discord bot constructor
+         * DiscordBot constructor
          * 
          * @param DiscordSocket socket
          * @param std::string token to authorize bote
@@ -37,7 +52,7 @@ class DiscordBot
         DiscordBot(DiscordSocket *socket, std::string token, bool verbose = false);
 
         /**
-         * Discord bot destructor
+         * DiscordBot destructor
          */
         ~DiscordBot();
 
@@ -77,7 +92,7 @@ class DiscordBot
         DBotErrors getErrorCode();
 
         /**
-         * Loads messages after lastMsgId
+         * Loads messages after lastMsgId. Clears previously loaded messages
          * 
          * @return bool TRUE if message are successfully loaded
          */

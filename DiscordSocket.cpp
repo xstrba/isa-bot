@@ -2,10 +2,10 @@
 
 DiscordSocket::DiscordSocket()
 {
-    port = HTTPS_PORT;
-    hostName = "discord.com";
-    error = false;
-    sock = -1;
+    port = HTTPS_PORT; // default port
+    hostName = "discord.com"; // discord host name
+    error = false; // no error
+    sock = -1; // no socket
 }
 
 int DiscordSocket::getPort()
@@ -28,11 +28,6 @@ std::string DiscordSocket::getErrorMessage()
     return errorMessage;
 }
 
-struct sockaddr_in DiscordSocket::getServerAddressStruct()
-{
-    return sAddrStruct;
-}
-
 std::string DiscordSocket::getIpAddress()
 {
     return ipAddress;
@@ -51,30 +46,37 @@ SSL *DiscordSocket::getSSLConnection()
 
 void DiscordSocket::initialize()
 {
-    struct addrinfo hints = {}, *addrs;
-    hints.ai_family = AF_INET;
+    struct addrinfo hints = {}, *addrs; // initialize objects for getting ip address of host
+    hints.ai_family = AF_INET; // set IPv4
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = 0;
+    hints.ai_protocol = IPPROTO_TCP; // protocol tcp (used with sock stream)
 
+    // set port number as string
     char portStr[16] = {};
     sprintf(portStr, "%d", port);
 
+    // get address info from host name and port
     int error = getaddrinfo(hostName.c_str(), portStr, &hints, &addrs);
     if (error)
     {
         return setError("Nepodařilo se připojít na server " + hostName);
     }
 
+    // for each address try to connect with socket
     for (struct addrinfo *addr = addrs; addr != NULL; addr = addr->ai_next)
     {
         sock = socket(addrs->ai_family, addrs->ai_socktype, addrs->ai_protocol);
 
+        // socket was created
         if (sock < 0) {
             continue;
         }
 
         if (connect(sock, addr->ai_addr, addr->ai_addrlen) == 0)
         {
+            // conection was successful
+
+            // get IPv4 string
             char ipStr[INET_ADDRSTRLEN];
             inet_ntop(addr->ai_family, &((struct sockaddr_in *)addr->ai_addr)->sin_addr, ipStr, sizeof ipStr);
             ipAddress = ipStr;
@@ -91,10 +93,10 @@ void DiscordSocket::initialize()
         return setError("Nepodařilo se vytvořit spojení pomocí soketu");
     }
 
-    SSL_load_error_strings ();
-    SSL_library_init ();
-    sslCtx = SSL_CTX_new (SSLv23_client_method ());
+    // initialize ssl context
+    sslCtx = SSL_CTX_new(SSLv23_client_method());
     
+    // initialize ssl connection
     sslConn = SSL_new(sslCtx);
     SSL_set_fd(sslConn, sock);
     
@@ -123,16 +125,16 @@ void DiscordSocket::sendData(std::string message, std::string data, std::string 
 
 HttpResponse *DiscordSocket::rcvData()
 {
-    int len = 100;
-    char buffer[100000];
-    std::string packet("");
-    long unsigned int totalRead = 0;
+    int len = RCV_BUFFER_LENGTH; // will get packet in chunks
+    char buffer[RCV_BUFFER_LENGTH];
+    std::string packet(""); // will store whole packet
+    long unsigned int totalRead = 0; // size of total data read
     bool hasContentLengthHeader = false;
     int contentLength = 0;
 
     while (1)
     {
-        len = SSL_read(sslConn, buffer, 100);
+        len = SSL_read(sslConn, buffer, RCV_BUFFER_LENGTH);
 
         if (len <= 0)
         {
@@ -146,14 +148,18 @@ HttpResponse *DiscordSocket::rcvData()
             {
                 setError("Chyba při spracovaní paketu");
                 std::cerr << "Error: " + errorMessage << std::endl;
+                
                 // return empty response
                 return new HttpResponse("");
             }
             break;
         }
 
+        // send of string so we don't have any previously loaded data
         buffer[len] = 0;
 
+        // 0\r\n\r\n is a last chunk of packet send to signalize end of message
+        // is not always present
         if (len == 5 && (strcmp(buffer, "0\r\n\r\n") == 0))
         {
             break;
@@ -165,17 +171,27 @@ HttpResponse *DiscordSocket::rcvData()
         int endHeader;
         if (!hasContentLengthHeader && (endHeader = packet.find("\r\n\r\n")) != -1)
         {
+            // found double line ending and has no content-length header loaded
+
             int clHeaderPos;
             if ((clHeaderPos = packet.substr(0, endHeader).find("Content-Length: ")) != -1)
             {
+                // find Content-Length header part in whole part of packet currently loaded
+                // no 0\r\n\r\n will coe in this case
+
                 hasContentLengthHeader = true;
+
+                // temporary object to process currently loaded data
+                // should store headers properly
                 HttpResponse header(packet);
                 try
                 {
+                    // get content length from header
                     contentLength = std::stoi(header.getHeader("Content-Length"));
                 }
                 catch (const std::exception &e)
                 {
+                    // if it fails set length to 0
                     contentLength = 0;
                 }
             }
@@ -185,6 +201,8 @@ HttpResponse *DiscordSocket::rcvData()
             hasContentLengthHeader &&
             ((packet.substr(0, packet.find("\r\n\r\n") + 4)).length() + contentLength == totalRead))
         {
+            // if has content-length header the end of packet is the end of header (or start of body. + 4)
+            // + content length. If it equals to total data read we are at the end of packet
             break;
         }
     }
@@ -194,6 +212,7 @@ HttpResponse *DiscordSocket::rcvData()
 
 void DiscordSocket::closeConnection()
 {
+    // send http request with header Connection: close
     std::stringstream sentData;
     sentData << "GET / HTTP/1.1"
              << "\r\n"
@@ -203,6 +222,7 @@ void DiscordSocket::closeConnection()
              << "\r\n";
 
     SSL_write(sslConn, sentData.str().c_str(), sentData.str().length());
+    
     char buffer[RCV_BUFFER_LENGTH];
     int rcvLen;
     if ((rcvLen = SSL_read(sslConn, buffer, RCV_BUFFER_LENGTH)) <= 0)
@@ -212,7 +232,6 @@ void DiscordSocket::closeConnection()
     else
     {
         std::cout << "Connection closed" << std::endl;
-        ;
     }
 }
 

@@ -10,18 +10,31 @@
 #include "JsonValue.hpp"
 #include "JsonParser.hpp"
 
+/**
+ * HttpResponse class
+ * 
+ * Class storing http response from socket
+ * 
+ * @param std::string responseText whole response as string
+ * @param std::string protocol protocol of response (e.g. HTTP/1.1)
+ * @param int responseCode response code (e.g. 200)
+ * @param std::string responseStatus response status (e.g. "OK")
+ * @param std::unordered_map<std::string, std::string> headers array of headers
+ * @param std::string responseDataText response data as string
+ * @param JsonValue *responseData response data as json value
+ */
 class HttpResponse
 {
     public:
         /**
-         * Http response constructor
+         * HttpResponse constructor
          * 
          * @param std::string responseText
          */
         HttpResponse(std::string responseText);
 
         /**
-         * Http response destructor
+         * HttpResponse destructor
          */
         ~HttpResponse();
 

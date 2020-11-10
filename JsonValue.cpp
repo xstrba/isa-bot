@@ -2,6 +2,7 @@
 
 JsonValue::JsonValue()
 {
+    // default type of json value is string
     dataType = JDT_STRING;
     data = "";
 }

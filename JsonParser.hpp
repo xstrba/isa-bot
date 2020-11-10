@@ -7,11 +7,20 @@
 #include <vector>
 #include "JsonValue.hpp"
 
+/**
+ * Class JsonParser
+ * 
+ * Class for parsing json string into objects that provide some 
+ * interface for accessing value
+ * 
+ * @param std::string jsonData json value passed to constructor
+ * @param JsonValue data parsed json data
+ */
 class JsonParser
 {
     public:
         /**
-         * Json parser constructor
+         * JsonParser constructor
          */
         JsonParser(std::string jsonData);
 

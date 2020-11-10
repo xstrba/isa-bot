@@ -3,12 +3,13 @@
 
 #include <iostream>
 #include <unistd.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h> 
 #include <openssl/ssl.h>
 #include <sstream> 
 #include <string>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include "HttpResponse.hpp"
 #include "string.h"
 
@@ -16,16 +17,31 @@
 #define HTTP_PORT 80
 #define RCV_BUFFER_LENGTH 2048
 
+/**
+ * DiscordSocket class
+ * 
+ * Class connecting through socket to discord server and providing
+ * interface for sending and receiving packets
+ * 
+ * @param int port port on which socket will connect (is set to HTTPS_PORT by default)
+ * @param int sock identifier of socket for communicating with discord server
+ * @param std::string hostName is set by default to discord.com
+ * @param bool error signalizing that some error happend
+ * @param std::string errorMessage containing error message
+ * @param std::string ipAddress ip address of host (set if connection with socket was successfull)
+ * @param SSL *sslConn ssl connection to server
+ * @param SSL_CTX *sslCtx ssl context
+ */
 class DiscordSocket
 {
     public:
         /**
-         * Discord socket constructor
+         * DiscordSocket constructor
          */
         DiscordSocket();
 
         /**
-         * Dicord socket destructor
+         * DicordSocket destructor
          */
         ~DiscordSocket();
 
@@ -65,13 +81,6 @@ class DiscordSocket
         void initialize();
 
         /**
-         * Get structure representing server address
-         * 
-         * @return sockaddr_in
-         */
-        struct sockaddr_in getServerAddressStruct();
-
-        /**
          * Get ip address of server socket is connected to
          * 
          * @return std::string ip address
@@ -84,16 +93,6 @@ class DiscordSocket
          * @return SSL ssl connection
          */
         SSL *getSSLConnection();
-
-        // /**
-        //  * Send request and receive data
-        //  * 
-        //  * @param std::string message
-        //  * @param std::string data
-        //  * @param std::string headers
-        //  * @return HttpResponse
-        //  */
-        // HttpResponse *sendAndRecv(std::string message, std::string data = "", std::string headers = "");
 
         /**
          * Sends http request with header indicating closing the connection
@@ -113,7 +112,6 @@ class DiscordSocket
         std::string hostName;
         bool error;
         std::string errorMessage;
-        struct sockaddr_in sAddrStruct;
         std::string ipAddress;
         SSL *sslConn;
         SSL_CTX *sslCtx;
