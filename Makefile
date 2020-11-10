@@ -3,8 +3,8 @@ CXXFLAGS=-Wall -g -D_POSIX_C_SOURCE=200809L -pedantic -std=c++17
 LDFLAGS = -L/usr/local/ssl/lib
 LDLIBS = -lssl -lcrypto
 TARGET=isabot
-OBJECTS=DiscordSocket.o DiscordBot.o HttpResponse.o JsonParser.o JsonValue.o Message.o
-HEADERS=DiscordSocket.hpp DiscordBot.hpp JsonParser.hpp HttpResponse.hpp JsonValue.hpp Message.hpp
+OBJECTS=DiscordSocket.o DiscordBot.o HttpResponse.o JsonParser.o JsonValue.o
+HEADERS=DiscordSocket.hpp DiscordBot.hpp JsonParser.hpp HttpResponse.hpp JsonValue.hpp
 
 all: ${TARGET}
 
