@@ -1,3 +1,11 @@
+/**
+ * Definition of JsonValue class
+ * 
+ * @file JsonValue.hpp
+ * @author Boris Strbak (xstrba05)
+ * @date 2020-11-18
+ */
+
 #include "JsonValue.hpp"
 
 JsonValue::JsonValue()

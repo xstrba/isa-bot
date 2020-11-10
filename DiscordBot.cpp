@@ -1,3 +1,11 @@
+/**
+ * Implementation of DiscordBot class
+ * 
+ * @file DiscordBot.cpp
+ * @author Boris Strbak (xstrba05)
+ * @date 2020-11-18
+ */
+
 #include "DiscordBot.hpp"
 
 DiscordBot::DiscordBot(DiscordSocket *socket, std::string token, bool verbose)

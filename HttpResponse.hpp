@@ -1,3 +1,12 @@
+/**
+ * Definition of HttpResponse class
+ * 
+ * @file HttpResponse.hpp
+ * @author Boris Strbak (xstrba05)
+ * @date 2020-11-18
+ */
+
+
 #ifndef HTTP_RESPONSE_HPP
 #define HTTP_RESPONSE_HPP
 

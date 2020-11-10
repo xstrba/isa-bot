@@ -1,3 +1,11 @@
+/**
+ * DiscordBot class definition
+ * 
+ * @file DiscordBot.hpp
+ * @author Boris Strbak (xstrba05)
+ * @date 2020-11-18
+ */
+
 #ifndef DISCORD_BOT_HPP
 #define DISCORD_BOT_HPP
 

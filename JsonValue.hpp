@@ -1,3 +1,12 @@
+/**
+ * Definition of JsonValue class
+ * 
+ * @file JsonValue.hpp
+ * @author Boris Strbak (xstrba05)
+ * @date 2020-11-18
+ */
+
+
 #ifndef JSON_VALUE_HPP
 #define JSON_VALUE_HPP
 

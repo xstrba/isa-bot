@@ -1,6 +1,11 @@
 /**
+ * Program isabot. Bot communicationg with discord server
+ * and reacting to messages sent to channel isa-bot on server
+ * bot is added to.
+ * 
  * @file isabot.c
- * @author Boris Strbak (xstrba05) 
+ * @author Boris Strbak (xstrba05)
+ * @date 2020-11-18
  */
 
 #include <string>

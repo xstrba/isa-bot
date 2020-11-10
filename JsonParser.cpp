@@ -1,3 +1,11 @@
+/**
+ * Definition of JsonParser class
+ * 
+ * @file JsonParser.hpp
+ * @author Boris Strbak (xstrba05)
+ * @date 2020-11-18
+ */
+
 #include "JsonParser.hpp"
 
 /**

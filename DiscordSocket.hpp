@@ -1,3 +1,11 @@
+/**
+ * Definition of DiscordSocket class
+ * 
+ * @file DiscordSocket.hpp
+ * @author Boris Strbak (xstrba05)
+ * @date 2020-11-18
+ */
+
 #ifndef DISCORD_SOCKET_HPP
 #define DISCORD_SOCKET_HPP
 
