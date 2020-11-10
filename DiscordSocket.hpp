@@ -17,13 +17,6 @@
 #define HTTP_PORT 80
 #define RCV_BUFFER_LENGTH 2048
 
-// https://quuxplusone.github.io/blog/2020/01/26/openssl-part-3/
-// "This is also a good time to mention that OpenSSL 1.0.2 (unlike 1.1.0) will not automatically initialize itself the first time you use one of its facilities. Also, its error messages are cryptic integer codes by default"
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    SSL_library_init();
-    SSL_load_error_strings();
-#endif
-
 /**
  * DiscordSocket class
  * 
