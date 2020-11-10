@@ -3,12 +3,13 @@
 
 #include <iostream>
 #include <unistd.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h> 
 #include <openssl/ssl.h>
 #include <sstream> 
 #include <string>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include "HttpResponse.hpp"
 #include "string.h"
 
