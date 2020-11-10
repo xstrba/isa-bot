@@ -31,7 +31,7 @@ HttpResponse::HttpResponse(std::string responseText)
             std::string headerLine = headerString.substr(0, lineEndPos);
             headerString.erase(0, lineEndPos + 2);
             
-            if (headerLine.find(": ") != -1) {
+            if (headerLine.find(": ") != ULONG_MAX) {
                 std::string name = headerLine.substr(0, headerLine.find(": "));
                 headerLine.erase(0, headerLine.find(": ") + 2);
 
@@ -42,11 +42,11 @@ HttpResponse::HttpResponse(std::string responseText)
         }
     }
 
-    if (responseCopy.find("\r\n") != -1) {    
+    if (responseCopy.find("\r\n") != ULONG_MAX) {    
         responseCopy.erase(0, responseCopy.find("\r\n") + 2);
     }
     
-    responseDataText = responseCopy.find("\r\n") != -1
+    responseDataText = responseCopy.find("\r\n") != ULONG_MAX
         ? responseCopy.substr(0, responseCopy.find("\r\n"))
         : responseCopy;
     responseData = JsonParser(responseDataText).getData();

@@ -160,8 +160,8 @@ bool DiscordBot::loadNewMessages()
 
                                 if (
                                     user->getType() == JDT_OBJECT &&
-                                    user->getObjectParam("username")->getString().find("bot") == -1 &&
-                                    user->getObjectParam("bot")->getString().find("true") == -1
+                                    user->getObjectParam("username")->getString().find("bot") == ULONG_MAX &&
+                                    user->getObjectParam("bot")->getString().find("true") == ULONG_MAX
                                 ) {
                                     messages.push_back(*it);
                                 }
@@ -229,8 +229,28 @@ void DiscordBot::reactToMessages()
 
             HttpResponse *response = socket->rcvData();
             int responseCode = response->getCode();
-            JsonValue *data;
-            data = response->getResponseData();
+
+            if (responseCode != 200)
+            {
+                switch (responseCode)
+                {
+                    case 401:
+                        errorCode = DBOT_ERR_AUTHORIZATION;
+                        break;
+                    case 403:
+                        errorCode = DBOT_ERR_FORBIDDEN;
+                        break;
+                    case 500:
+                        errorCode = DBOT_ERR_SERVER_INTERNAL;
+                        break;
+                    case 503:
+                        errorCode = DBOT_ERR_SERVER_INTERNAL;
+                        break;
+                    default:
+                        errorCode = DBOT_ERR_INTERNAL;
+                        break;
+                }
+            }
 
             delete response;
         }
