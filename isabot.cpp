@@ -15,8 +15,6 @@
 #include "DiscordSocket.hpp"
 #include "DiscordBot.hpp"
 
-#define PORT 443
-
 using namespace std;
 
 /**
@@ -55,6 +53,8 @@ int main(int argc, char **argv)
 
     if (help || !token.length())
     {
+        // if help is set or token is not set print help
+
         return displayHelp();
     }
 
@@ -70,16 +70,24 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    cout << "Connected to server[name address]: "
-         << socket->getHostName()
-         << " "
-         << socket->getIpAddress()
-         << endl;
+    if (verbose) {
+        // in verbose mode print message informing user that
+        // he is connected to server on IP address
 
+        cout << "Connected to server[name address]: "
+            << socket->getHostName()
+            << " "
+            << socket->getIpAddress()
+            << endl;
+    }
+
+    // initialize bot with socket and params from console
     bot = new DiscordBot(socket, token, verbose);
 
     if (bot->setChannelId())
     {
+        // if bot loaded channel successfully he can do his work
+
         while (1)
         {
             sleep(1);
@@ -110,30 +118,31 @@ int main(int argc, char **argv)
         return 0;
     }
 
+    // process bot's error and display message
     std::string errMessage = "";
     switch (err)
     {
-    case DBOT_ERR_AUTHORIZATION:
-        errMessage = "Chyba autorizace. Zkontrolujte token";
-        break;
-    case DBOT_ERR_NO_GUILD:
-        errMessage = "Bot není připojenej na žádnej server";
-        break;
-    case DBOT_ERR_NO_CHANNEL:
-        errMessage = "Nebyl nalezen kanál isa-bot";
-        break;
-    case DBOT_ERR_INTERNAL:
-        errMessage = "Došlo ku chybe pri spracovaní odpovědí discord serveru";
-        break;
-    case DBOT_ERR_SERVER_INTERNAL:
-        errMessage = "Došlo ku chybe při komunikaci s discord serverem";
-        break;
-    case DBOT_ERR_FORBIDDEN:
-        errMessage = "Bot nemá dostatečné práva. Povolte práva \"View Channels\", \"Send Messages\", \"Read Message History\" a \"Embed Links\" z rozsahu \"Bot\"";
-        break;
-    default:
-        errMessage = "Neznáma chyba";
-        break;
+        case DBOT_ERR_AUTHORIZATION:
+            errMessage = "Chyba autorizace. Zkontrolujte token";
+            break;
+        case DBOT_ERR_NO_GUILD:
+            errMessage = "Bot není připojenej na žádnej server";
+            break;
+        case DBOT_ERR_NO_CHANNEL:
+            errMessage = "Nebyl nalezen kanál isa-bot";
+            break;
+        case DBOT_ERR_INTERNAL:
+            errMessage = "Došlo ku chybe pri spracovaní odpovědí discord serveru";
+            break;
+        case DBOT_ERR_SERVER_INTERNAL:
+            errMessage = "Došlo ku chybe při komunikaci s discord serverem";
+            break;
+        case DBOT_ERR_FORBIDDEN:
+            errMessage = "Bot nemá dostatečné práva. Povolte práva \"View Channels\", \"Send Messages\", \"Read Message History\" a \"Embed Links\" z rozsahu \"Bot\"";
+            break;
+        default:
+            errMessage = "Neznáma chyba";
+            break;
     }
 
     delete bot;

@@ -12,16 +12,25 @@
  */
 enum JsonDataTypesEnum {JDT_ARRAY, JDT_OBJECT, JDT_STRING};
 
+/**
+ * Class JsonValue
+ * 
+ * Class providing interface for accessing json values
+ * 
+ * @param JsonDataTypesEnum dataType type of json value
+ * @param std::variant<std::vector<JsonValue *>, std::string> content of json value can by array or string
+ * @param std::unordered_map<std::string, JsonValue *> parameters of object json value
+ */
 class JsonValue
 {
     public:
         /**
-         * Json value constructor
+         * JsonValue constructor
          */
         JsonValue();
 
         /**
-         * Json value destructor
+         * JsonValue destructor
          */
         ~JsonValue();
 
