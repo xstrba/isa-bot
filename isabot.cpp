@@ -42,6 +42,14 @@ int displayHelp();
 void processArgs(int argc, char **argv, bool *verbose, bool *isHelp, string *token);
 
 /**
+ * Process bots errors
+ * 
+ * @param DiscordBot bot
+ * @return void
+ */
+void processBotError(DiscordBot *bot);
+
+/**
  * Main function
  * 
  * @param int argc number of commant line arguments
@@ -77,7 +85,7 @@ int main(int argc, char **argv)
     socket->initialize();
     if (socket->getError())
     {
-        cerr << socket->getErrorMessage() << endl;
+        cerr << "Error: " << socket->getErrorMessage() << endl;
         delete socket;
         return 1;
     }
@@ -102,13 +110,14 @@ int main(int argc, char **argv)
 
         while (1)
         {
+            // have to wait for 1 second before sending another requests
+            // to not be rate limited by discord server
             sleep(1);
-
             if (!bot->loadNewMessages())
             {
                 if (verbose)
                 {
-                    cerr << "Error: Chyba při načítaní správ" << endl;
+                    processBotError(bot);
                 }
             } else {
                 bot->reactToMessages();
@@ -116,8 +125,7 @@ int main(int argc, char **argv)
 
             if (socket->getError() || bot->getErrorCode() != DBOT_NO_ERROR)
             {
-                delete bot;
-                return 1;
+                processBotError(bot);
             }
         }
     }
@@ -128,37 +136,11 @@ int main(int argc, char **argv)
     {
         delete bot;
         return 0;
-    }
-
-    // process bot's error and display message
-    std::string errMessage = "";
-    switch (err)
-    {
-        case DBOT_ERR_AUTHORIZATION:
-            errMessage = "Chyba autorizace. Zkontrolujte token";
-            break;
-        case DBOT_ERR_NO_GUILD:
-            errMessage = "Bot není připojenej na žádnej server";
-            break;
-        case DBOT_ERR_NO_CHANNEL:
-            errMessage = "Nebyl nalezen kanál isa-bot";
-            break;
-        case DBOT_ERR_INTERNAL:
-            errMessage = "Došlo ku chybe pri spracovaní odpovědí discord serveru";
-            break;
-        case DBOT_ERR_SERVER_INTERNAL:
-            errMessage = "Došlo ku chybe při komunikaci s discord serverem";
-            break;
-        case DBOT_ERR_FORBIDDEN:
-            errMessage = "Bot nemá dostatečné práva. Povolte práva \"View Channels\", \"Send Messages\", \"Read Message History\" a \"Embed Links\" z rozsahu \"Bot\"";
-            break;
-        default:
-            errMessage = "Neznáma chyba";
-            break;
+    } else {
+        processBotError(bot);
     }
 
     delete bot;
-    cerr << "Error: " + errMessage << endl;
     return err ? err : 1;
 }
 
@@ -204,4 +186,42 @@ void processArgs(int argc, char **argv, bool *verbose, bool *isHelp, string *tok
             (*token) = argv[i + 1];
         }
     }
+}
+
+void processBotError(DiscordBot *bot)
+{
+    DBotErrors err = bot->getErrorCode();
+    std::string errMessage = "";
+
+    switch (err)
+    {
+        case DBOT_ERR_AUTHORIZATION:
+            errMessage = "Chyba autorizace. Zkontrolujte token";
+            break;
+        case DBOT_ERR_NO_GUILD:
+            errMessage = "Bot není připojenej na žádnej server";
+            break;
+        case DBOT_ERR_NO_CHANNEL:
+            errMessage = "Nebyl nalezen kanál isa-bot";
+            break;
+        case DBOT_ERR_INTERNAL:
+            errMessage = "Došlo ku chybe pri spracovaní odpovědí discord serveru";
+            break;
+        case DBOT_ERR_SERVER_INTERNAL:
+            errMessage = "Došlo ku chybe při komunikaci s discord serverem";
+            break;
+        case DBOT_ERR_FORBIDDEN:
+            errMessage = "Bot nemá dostatečné práva. Povolte práva \"View Channels\", \"Send Messages\", \"Read Message History\" a \"Embed Links\" z rozsahu \"Bot\"";
+            break;
+        case DBOT_ERR_SOCKET:
+            errMessage = bot->getSocket()->getErrorMessage();
+        case DBOT_ERR_NOT_FOUND:
+            errMessage = "Dotaz na neexistujíci url";
+        case DBOT_ERR_BAD_METHOD:
+            errMessage = "Dotaz špatnou metodou";
+        default:
+            errMessage = "Neznáma chyba při práci bota";
+            break;
+    }
+    cerr << "Error: " + errMessage << endl;
 }

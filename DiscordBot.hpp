@@ -23,6 +23,7 @@ enum DBotErrors {
     DBOT_NO_ERROR = 0,
     DBOT_ERR_NO_GUILD = 11,
     DBOT_ERR_NO_CHANNEL = 12,
+    DBOT_ERR_SOCKET = 13,
     DBOT_ERR_INTERNAL = 99,
     DBOT_ERR_AUTHORIZATION = 401,
     DBOT_ERR_FORBIDDEN = 403,
@@ -46,6 +47,7 @@ enum DBotErrors {
  * @param bool verbose true if bot should print messages to console
  * @param DBotErrors errorCode error code set in case some error happens
  * @param std::vector<JsonValue *> messages loaded new messages
+ * @oaram std::lastTimestamp timestamp of last message loaded
  */
 class DiscordBot
 {
@@ -123,6 +125,7 @@ class DiscordBot
         bool verbose;
         DBotErrors errorCode;
         std::vector<JsonValue *> messages = {};
+        std::string lastTimestamp;
 };
 
 #endif
