@@ -89,18 +89,7 @@ int main(int argc, char **argv)
         delete socket;
         return 1;
     }
-
-    if (verbose) {
-        // in verbose mode print message informing user that
-        // he is connected to server on IP address
-
-        cout << "Connected to server[name address]: "
-            << socket->getHostName()
-            << " "
-            << socket->getIpAddress()
-            << endl;
-    }
-
+    
     // initialize bot with socket and params from console
     bot = new DiscordBot(socket, token, verbose);
 
