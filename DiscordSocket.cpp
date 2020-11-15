@@ -54,6 +54,12 @@ SSL *DiscordSocket::getSSLConnection()
 
 void DiscordSocket::initialize()
 {
+    // implementatio inspired by https://www.binarytides.com/socket-programming-c-linux-tutorial/
+    // and by https://stackoverflow.com/questions/41229601/openssl-in-c-socket-connection-https-client
+    // answered by: O.logN
+    // asked by: Hball
+
+    error = false;
     struct addrinfo hints = {}, *addrs; // initialize objects for getting ip address of host
     hints.ai_family = AF_INET; // set IPv4
     hints.ai_socktype = SOCK_STREAM;
@@ -117,6 +123,11 @@ void DiscordSocket::initialize()
 
 void DiscordSocket::sendData(std::string message, std::string data, std::string headers)
 {
+    // inspired by https://stackoverflow.com/questions/41229601/openssl-in-c-socket-connection-https-client
+    // answered by: O.logN
+    // asked by: Hball
+
+    error = false;
     std::stringstream sentData;
     sentData << message << "\r\n"
              << "Host: " << hostName << "\r\n"
@@ -128,11 +139,23 @@ void DiscordSocket::sendData(std::string message, std::string data, std::string 
         sentData << data << "\r\n\r\n";
     }
 
-    SSL_write(sslConn, sentData.str().c_str(), sentData.str().length());
+    try
+    {
+        SSL_write(sslConn, sentData.str().c_str(), sentData.str().length());
+    }
+    catch(const std::exception& e)
+    {
+        setError("Nepodařilo se odeslat data");
+    } 
 }
 
 HttpResponse *DiscordSocket::rcvData()
 {
+    // inspired by https://stackoverflow.com/questions/41229601/openssl-in-c-socket-connection-https-client
+    // answered by: O.logN
+    // asked by: Hball
+
+    error = false;
     int len = RCV_BUFFER_LENGTH; // will get packet in chunks
     char buffer[RCV_BUFFER_LENGTH];
     std::string packet(""); // will store whole packet
@@ -154,9 +177,7 @@ HttpResponse *DiscordSocket::rcvData()
                 err == SSL_ERROR_WANT_READ ||
                 err == SSL_ERROR_WANT_WRITE)
             {
-                setError("Chyba při spracovaní paketu");
-                std::cerr << "Error: " + errorMessage << std::endl;
-                
+                setError("Chyba při čtení paketu");                
                 // return empty response
                 return new HttpResponse("");
             }
@@ -191,16 +212,16 @@ HttpResponse *DiscordSocket::rcvData()
 
                 // temporary object to process currently loaded data
                 // should store headers properly
-                HttpResponse header(packet);
                 try
                 {
+                    HttpResponse header(packet);
                     // get content length from header
                     contentLength = std::stoi(header.getHeader("Content-Length"));
                 }
                 catch (const std::exception &e)
                 {
-                    // if it fails set length to 0
-                    contentLength = 0;
+                    setError("Chyba při spracovaní paketu");
+                    return new HttpResponse("");
                 }
             }
         }
@@ -215,11 +236,24 @@ HttpResponse *DiscordSocket::rcvData()
         }
     }
 
-    return new HttpResponse(packet);
+    try
+    {
+        return new HttpResponse(packet);
+    }
+    catch(const std::exception& e)
+    {
+        setError("Chyba při spracovaní paketu");
+    }
+    return new HttpResponse("");
 }
 
 void DiscordSocket::closeConnection()
 {
+    // inspired by https://stackoverflow.com/questions/41229601/openssl-in-c-socket-connection-https-client
+    // answered by: O.logN
+    // asked by: Hball
+
+    error = false;
     // send http request with header Connection: close
     std::stringstream sentData;
     sentData << "GET / HTTP/1.1"
@@ -229,17 +263,21 @@ void DiscordSocket::closeConnection()
              << "UserAgent: DiscordBot (https://discordapp.com, 2.0)\r\n"
              << "\r\n";
 
-    SSL_write(sslConn, sentData.str().c_str(), sentData.str().length());
+    try
+    {
+        SSL_write(sslConn, sentData.str().c_str(), sentData.str().length());
+    }
+    catch(const std::exception& e)
+    {
+        setError("Nepodařilo se uzavřít spojení se serverem");
+        return;
+    }
     
     char buffer[RCV_BUFFER_LENGTH];
     int rcvLen;
     if ((rcvLen = SSL_read(sslConn, buffer, RCV_BUFFER_LENGTH)) <= 0)
     {
-        std::cerr << "Nepodařilo se uzavřít spojení ze serverem" << std::endl;
-    }
-    else
-    {
-        std::cout << "Connection closed" << std::endl;
+        setError("Nepodařilo se uzavřít spojení se serverem");
     }
 }
 
