@@ -29,6 +29,7 @@ enum DBotErrors {
     DBOT_ERR_FORBIDDEN = 403,
     DBOT_ERR_NOT_FOUND = 404,
     DBOT_ERR_BAD_METHOD = 405,
+    DBOT_ERR_RATE_LIMITED = 429,
     DBOT_ERR_SERVER_INTERNAL = 500,
 };
 
@@ -114,6 +115,13 @@ class DiscordBot
          * @return void
          */
         void reactToMessages();
+
+        /**
+         * Clear all loaded messages
+         * 
+         * @return void
+         */
+        void clearMessages();
 
     protected:
     private:

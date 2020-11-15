@@ -58,13 +58,13 @@ void processBotError(DiscordBot *bot);
  */
 int main(int argc, char **argv)
 {
-    // https://quuxplusone.github.io/blog/2020/01/26/openssl-part-3/
-    // "This is also a good time to mention that OpenSSL 1.0.2 (unlike 1.1.0) will not automatically initialize itself the first time you use one of its facilities. Also, its error messages are cryptic integer codes by default"
-    #if OPENSSL_VERSION_NUMBER < 0x10100000L
-        SSL_library_init();
-        SSL_load_error_strings();
-    #endif
-    
+// https://quuxplusone.github.io/blog/2020/01/26/openssl-part-3/
+// "This is also a good time to mention that OpenSSL 1.0.2 (unlike 1.1.0) will not automatically initialize itself the first time you use one of its facilities. Also, its error messages are cryptic integer codes by default"
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    SSL_library_init();
+    SSL_load_error_strings();
+#endif
+
     bool verbose = false;
     bool help = false;
     string token = "";
@@ -89,32 +89,43 @@ int main(int argc, char **argv)
         delete socket;
         return 1;
     }
-    
+
     // initialize bot with socket and params from console
     bot = new DiscordBot(socket, token, verbose);
 
+    // if bot loaded channel successfully he can do his work
     if (bot->setChannelId())
     {
-        // if bot loaded channel successfully he can do his work
-
         while (1)
         {
-            // have to wait for 1 second before sending another requests
-            // to not be rate limited by discord server
+            // wait one second before loading new messages
             sleep(1);
             if (!bot->loadNewMessages())
             {
-                if (verbose)
+                if (bot->getErrorCode() == DBOT_ERR_RATE_LIMITED)
+                {
+                    // wait additional 5 seconds if bot was rate limited by discord server
+                    sleep(5);
+                }
+                else if (verbose)
                 {
                     processBotError(bot);
                 }
-            } else {
+                continue;
+            }
+            else
+            {
                 bot->reactToMessages();
             }
 
             if (socket->getError() || bot->getErrorCode() != DBOT_NO_ERROR)
             {
-                processBotError(bot);
+                if (bot->getErrorCode() == DBOT_ERR_RATE_LIMITED) {
+                    // wait additional 5 seconds if bot was rate limited by discord server
+                    sleep(5);
+                } else {
+                    processBotError(bot);
+                }
             }
         }
     }
@@ -125,7 +136,9 @@ int main(int argc, char **argv)
     {
         delete bot;
         return 0;
-    } else {
+    }
+    else
+    {
         processBotError(bot);
     }
 
@@ -184,33 +197,33 @@ void processBotError(DiscordBot *bot)
 
     switch (err)
     {
-        case DBOT_ERR_AUTHORIZATION:
-            errMessage = "Chyba autorizace. Zkontrolujte token";
-            break;
-        case DBOT_ERR_NO_GUILD:
-            errMessage = "Bot není připojenej na žádnej server";
-            break;
-        case DBOT_ERR_NO_CHANNEL:
-            errMessage = "Nebyl nalezen kanál isa-bot";
-            break;
-        case DBOT_ERR_INTERNAL:
-            errMessage = "Došlo ku chybe pri spracovaní odpovědí discord serveru";
-            break;
-        case DBOT_ERR_SERVER_INTERNAL:
-            errMessage = "Došlo ku chybe při komunikaci s discord serverem";
-            break;
-        case DBOT_ERR_FORBIDDEN:
-            errMessage = "Bot nemá dostatečné práva. Povolte práva \"View Channels\", \"Send Messages\", \"Read Message History\" a \"Embed Links\" z rozsahu \"Bot\"";
-            break;
-        case DBOT_ERR_SOCKET:
-            errMessage = bot->getSocket()->getErrorMessage();
-        case DBOT_ERR_NOT_FOUND:
-            errMessage = "Dotaz na neexistujíci url";
-        case DBOT_ERR_BAD_METHOD:
-            errMessage = "Dotaz špatnou metodou";
-        default:
-            errMessage = "Neznáma chyba při práci bota";
-            break;
+    case DBOT_ERR_AUTHORIZATION:
+        errMessage = "Chyba autorizace. Zkontrolujte token";
+        break;
+    case DBOT_ERR_NO_GUILD:
+        errMessage = "Bot není připojenej na žádnej server";
+        break;
+    case DBOT_ERR_NO_CHANNEL:
+        errMessage = "Nebyl nalezen kanál isa-bot";
+        break;
+    case DBOT_ERR_INTERNAL:
+        errMessage = "Došlo ku chybe pri spracovaní odpovědí discord serveru";
+        break;
+    case DBOT_ERR_SERVER_INTERNAL:
+        errMessage = "Došlo ku chybe při komunikaci s discord serverem";
+        break;
+    case DBOT_ERR_FORBIDDEN:
+        errMessage = "Bot nemá dostatečné práva. Povolte práva \"View Channels\", \"Send Messages\", \"Read Message History\" a \"Embed Links\" z rozsahu \"Bot\"";
+        break;
+    case DBOT_ERR_SOCKET:
+        errMessage = bot->getSocket()->getErrorMessage();
+    case DBOT_ERR_NOT_FOUND:
+        errMessage = "Dotaz na neexistujíci url";
+    case DBOT_ERR_BAD_METHOD:
+        errMessage = "Dotaz špatnou metodou";
+    default:
+        errMessage = "Neznáma chyba při práci bota";
+        break;
     }
     cerr << "Error: " + errMessage << endl;
 }

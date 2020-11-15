@@ -167,13 +167,7 @@ bool DiscordBot::loadNewMessages()
 {
     errorCode = DBOT_NO_ERROR;
 
-    // delete all previously loaded messages
-    for (auto it = messages.begin(); it != messages.end(); it++)
-    {
-        delete (*it);
-    }
-
-    messages = {};
+    clearMessages();
 
     if (channelId.length())
     {
@@ -203,6 +197,18 @@ bool DiscordBot::loadNewMessages()
         JsonValue *data;
         data = response->getResponseData();
 
+        try
+        {
+            if (std::stoi(response->getHeader("x-ratelimit-remaining")) == 0 && responseCode != 429)
+            {
+                unsigned waitSeconds = std::stoi(response->getHeader("x-ratelimit-reset-after"));
+                sleep(waitSeconds);
+            }
+        }
+        catch (const std::exception &e)
+        {
+        }
+
         if (socket->getError())
         {
             errorCode = DBOT_ERR_SOCKET;
@@ -218,7 +224,6 @@ bool DiscordBot::loadNewMessages()
                 // was successful so store all loaded messages
                 if (data->getType() == JDT_ARRAY && data->getArray().size())
                 {
-
                     std::vector<JsonValue *> dataMessages = data->getArray();
 
                     // iterat over messages from the end
@@ -236,7 +241,7 @@ bool DiscordBot::loadNewMessages()
                                 {
                                     lastMsgId = msgId;
                                     JsonValue *user = (*it)->getObjectParam("author");
-                                    
+
                                     if (
                                         user->getType() == JDT_OBJECT &&
                                         user->getObjectParam("username")->getString().find("bot") == ULONG_MAX &&
@@ -272,6 +277,9 @@ bool DiscordBot::loadNewMessages()
         case 503:
             errorCode = DBOT_ERR_SERVER_INTERNAL;
             return false;
+        case 429:
+            errorCode = DBOT_ERR_RATE_LIMITED;
+            return false;
         default:
             errorCode = DBOT_ERR_INTERNAL;
             return false;
@@ -288,9 +296,8 @@ void DiscordBot::reactToMessages()
 
     for (auto it = messages.begin(); it != messages.end(); it++)
     {
-        // send max 5 responses per second to prevent being rate limited
-        // by discord server
-        sleep(0.2);
+        // wait 1/5 of a second before sending new messages
+        usleep(200000);
         JsonValue *user = (*it)->getObjectParam("author");
         if (user->getType() == JDT_OBJECT)
         {
@@ -338,6 +345,18 @@ void DiscordBot::reactToMessages()
             HttpResponse *response = socket->rcvData();
             int responseCode = response->getCode();
 
+            try
+            {
+                if (std::stoi(response->getHeader("x-ratelimit-remaining")) == 0 && responseCode != 429)
+                {
+                    unsigned waitSeconds = std::stoi(response->getHeader("x-ratelimit-reset-after"));
+                    sleep(waitSeconds);
+                }
+            }
+            catch (const std::exception &e)
+            {
+            }
+
             if (socket->getError())
             {
                 errorCode = DBOT_ERR_SOCKET;
@@ -360,19 +379,36 @@ void DiscordBot::reactToMessages()
                 case 503:
                     errorCode = DBOT_ERR_SERVER_INTERNAL;
                     break;
+                case 429:
+                    // if bot is rate limited wait for 5 seconds
+                    it--;
+                    sleep(5);
+                    continue;
                 default:
+                    std::cerr << "what";
                     errorCode = DBOT_ERR_INTERNAL;
                     break;
                 }
             }
             else
             {
-                // std::cout << response->getResponseDataText() << std::endl;
+                lastMsgId = (*it)->getObjectParam("id")->getString();
             }
 
             delete response;
         }
     }
+}
+
+void DiscordBot::clearMessages()
+{
+    // delete all previously loaded messages
+    for (auto it = messages.begin(); it != messages.end(); it++)
+    {
+        delete (*it);
+    }
+
+    messages = {};
 }
 
 DiscordSocket *DiscordBot::getSocket()
