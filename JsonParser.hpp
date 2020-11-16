@@ -8,7 +8,7 @@
 
 
 #ifndef JSON_PARSER_HPP
-#define JSON_PARSER_CPP
+#define JSON_PARSER_HPP
 
 #include <unistd.h>
 #include <string>

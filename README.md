@@ -32,3 +32,4 @@ JsonParser.hpp
 JsonParser.cpp
 JsonValue.cpp
 JsonValue.hpp
+tests.cpp

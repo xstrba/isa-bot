@@ -37,9 +37,9 @@ int displayHelp();
  * @param bool verbose variable to store if verbose is on
  * @param bool help variable to store if help is on
  * @param string token variable to store token
- * @return void
+ * @return bool true if arguments parsed successfully, false if error
  */
-void processArgs(int argc, char **argv, bool *verbose, bool *isHelp, string *token);
+bool processArgs(int argc, char **argv, bool *verbose, bool *isHelp, string *token);
 
 /**
  * Process bots errors
@@ -54,7 +54,7 @@ void processBotError(DiscordBot *bot);
  * 
  * @param int argc number of commant line arguments
  * @param char[][] argv command line arguments
- * @return 0 if success or help message, 1 if error 
+ * @return 0 if success or help message, >= 1 if error 
  */
 int main(int argc, char **argv)
 {
@@ -69,7 +69,9 @@ int main(int argc, char **argv)
     bool help = false;
     string token = "";
 
-    processArgs(argc, argv, &verbose, &help, &token);
+    if (!processArgs(argc, argv, &verbose, &help, &token)) {
+        return 1;
+    }
 
     if (help || !token.length())
     {
@@ -161,7 +163,7 @@ int displayHelp()
     return 0;
 }
 
-void processArgs(int argc, char **argv, bool *verbose, bool *isHelp, string *token)
+bool processArgs(int argc, char **argv, bool *verbose, bool *isHelp, string *token)
 {
     // parse command line arguments
     for (int i = 1; i < argc; i++)
@@ -169,25 +171,28 @@ void processArgs(int argc, char **argv, bool *verbose, bool *isHelp, string *tok
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
         {
             (*isHelp) = true;
-            return;
+            return true;
         }
-
-        if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0)
+        else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0)
         {
             (*verbose) = true;
         }
-
-        if (strcmp(argv[i], "-t") == 0)
+        else if (strcmp(argv[i], "-t") == 0)
         {
             if (i + 1 >= argc || argv[i + 1][0] == '-')
             {
-                (*isHelp) = true;
-                return;
+                cerr << "Error: Chýba hodnota argumentu token" << endl;
+                return false;
             }
 
-            (*token) = argv[i + 1];
+            (*token) = argv[i++ + 1];
+        } else {
+            cerr << "Error: neznámy argument " << argv[i] << endl;
+            return false;
         }
     }
+
+    return true;
 }
 
 void processBotError(DiscordBot *bot)

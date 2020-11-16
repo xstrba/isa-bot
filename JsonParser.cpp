@@ -450,7 +450,7 @@ JsonParser::JsonParser(std::string json)
                 processFirstObjectValue(json, data);
                 break;
             case '"':
-                data->setString(json.substr(0, json.length() - 1));
+                data->setString(json.substr(1, json.length() - 2));
                 break;
             default:
                 // is not even json but store it as string

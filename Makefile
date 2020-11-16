@@ -12,7 +12,14 @@ ${TARGET}: ${OBJECTS} ${TARGET}.o ${HEADERS}
 	${CXX} -o ${TARGET} ${TARGET}.o ${OBJECTS} ${LDFLAGS} ${LDLIBS}
 
 clean:
-	rm -rf ${TARGET}.o ${TARGET} ${OBJECTS}
+	rm -rf ${TARGET}.o ${TARGET} ${OBJECTS} tests tests.o
 
-test: ${TARGET}
+try: ${TARGET}
 	./${TARGET} -v -t NzY5NjcwODgyNTY5NDg2Mzc2.X5SZ3g.Pw3JEddBOMCyp8VHd10ZnowZ8UY
+
+test: tests
+	./tests
+
+tests: tests.cpp ${TARGET}
+	${CXX} ${CXXFLAGS} -c tests.cpp
+	${CXX} ${CXXFLAGS} -o tests tests.o
