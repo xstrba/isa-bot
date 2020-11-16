@@ -17,6 +17,9 @@ isabot -t 123bot_access_token123
 isabot -t 123bot_access_token123 -v
 isabot -t 123bot_access_token123 --verbose
 
+### Spuštění testů:
+make test
+
 ## Seznam odevzdaných souborů:
 README.md
 Makefile
