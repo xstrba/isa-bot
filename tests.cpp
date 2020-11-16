@@ -167,4 +167,6 @@ void test()
     ASSERT(response->getResponseDataText() == "[]");
     ASSERT(response->getResponseData()->getType() == JDT_ARRAY);
     delete response;
+
+    cout << "End of http response tests" << endl;
 }
