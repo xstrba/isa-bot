@@ -8,6 +8,14 @@
 
 #include "DiscordBot.hpp"
 
+void nsleep(unsigned milisec)
+{
+    struct timespec req = {};
+    req.tv_sec = 0;
+    req.tv_nsec = milisec * 1000000L;
+    nanosleep(&req, nullptr);
+}
+
 DiscordBot::DiscordBot(DiscordSocket *socket, std::string token, bool verbose)
 {
     this->socket = socket;
@@ -205,7 +213,7 @@ bool DiscordBot::loadNewMessages()
             if (std::stoi(response->getHeader("x-ratelimit-remaining")) == 0 && responseCode != 429)
             {
                 unsigned waitSeconds = std::stoi(response->getHeader("x-ratelimit-reset-after"));
-                sleep(waitSeconds);
+                nsleep(waitSeconds * 1000);
             }
         }
         catch (const std::exception &e)
@@ -300,7 +308,7 @@ void DiscordBot::reactToMessages()
     for (auto it = messages.begin(); it != messages.end(); it++)
     {
         // wait 1/5 of a second before sending new messages
-        usleep(200000);
+        nsleep(200);
         JsonValue *user = (*it)->getObjectParam("author");
         if (user->getType() == JDT_OBJECT)
         {
@@ -353,7 +361,7 @@ void DiscordBot::reactToMessages()
                 if (std::stoi(response->getHeader("x-ratelimit-remaining")) == 0 && responseCode != 429)
                 {
                     unsigned waitSeconds = std::stoi(response->getHeader("x-ratelimit-reset-after"));
-                    sleep(waitSeconds);
+                    nsleep(waitSeconds * 1000);
                 }
             }
             catch (const std::exception &e)
@@ -385,7 +393,7 @@ void DiscordBot::reactToMessages()
                 case 429:
                     // if bot is rate limited wait for 5 seconds
                     it--;
-                    sleep(5);
+                    nsleep(5000);
                     continue;
                 default:
                     std::cerr << "what";

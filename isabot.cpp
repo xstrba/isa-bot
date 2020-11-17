@@ -101,13 +101,13 @@ int main(int argc, char **argv)
         while (1)
         {
             // wait one second before loading new messages
-            sleep(1);
+            nsleep(1000);
             if (!bot->loadNewMessages())
             {
                 if (bot->getErrorCode() == DBOT_ERR_RATE_LIMITED)
                 {
                     // wait additional 5 seconds if bot was rate limited by discord server
-                    sleep(5);
+                    nsleep(5000);
                 }
                 else if (verbose)
                 {
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
             {
                 if (bot->getErrorCode() == DBOT_ERR_RATE_LIMITED) {
                     // wait additional 5 seconds if bot was rate limited by discord server
-                    sleep(5);
+                    nsleep(5000);
                 } else {
                     processBotError(bot);
                 }

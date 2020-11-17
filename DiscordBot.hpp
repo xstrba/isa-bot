@@ -11,6 +11,7 @@
 
 #include <unistd.h>
 #include <string>
+#include <time.h>
 #include "DiscordSocket.hpp"
 
 /** Type of text channel */
@@ -35,6 +36,15 @@ enum DBotErrors {
     DBOT_ERR_RATE_LIMITED = 429,
     DBOT_ERR_SERVER_INTERNAL = 500,
 };
+
+/**
+ * Function that stops execution of a program for given miliseconds
+ * Implementation inspired by http://timmurphy.org/2009/09/29/nanosleep-in-c-c/
+ * 
+ * @param unsigned milisec miliseconds
+ * @return void
+ */
+void nsleep(unsigned milisec);
 
 /**
  * DiscordBot class
