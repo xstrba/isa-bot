@@ -117,7 +117,10 @@ bool DiscordBot::setChannelId()
         for (std::vector<JsonValue *>::iterator it = channels.begin(); it != channels.end(); ++it)
         {
             // find channel that's name is isa-bot and load it's id and last message id
-            if ((*it)->getObjectParam("name")->getString() == "isa-bot")
+            if (
+                (*it)->getObjectParam("name")->getString() == "isa-bot" &&
+                (*it)->getObjectParam("type")->getString() == CH_GUILD_TEXT
+            )
             {
                 try
                 {

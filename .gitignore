@@ -2,3 +2,7 @@
 *.o
 isabot
 tests
+indent.log
+manual.*
+!manual/manual.tex
+botoken.txt

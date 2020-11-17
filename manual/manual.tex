@@ -1,0 +1,192 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[left=2cm,text={17cm, 24cm},top=3cm]{geometry}
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+\usepackage[colorlinks]{hyperref}
+\usepackage{url}
+
+\begin{document}
+\begin{titlepage}
+	\begin{center}
+		\textsc{
+		{\Huge Vysoké učení technické v Brně}\\{\huge Fakulta informačních technologií}
+		}
+		\vspace{\stretch{0.382}}
+		{\LARGE \\ Síťové aplikace a~správa sítí -- Projekt \\[6pt] {\Huge Discord bot}}
+		\vspace{\stretch{0.618}}
+	\end{center}
+
+	{\Large
+	\today
+	\hfill
+	Boris Štrbák (xstrba05)
+	}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Úvod}
+\subsection{Zadanie}
+Vytvořte program isabot, který bude působit jako bot na komunikační službě Discord. Bot se připojí na Discord server na kanál "\#isa-bot" a bude reagovat na všechny zprávy zaslané ostatními uživateli. Bot bude fungovat jako echo pro všechny zprávy, které zachytí. V případě, že bot na daném kanále zachytí jakoukoli zprávu jiného uživatele (tedy jinou než svou vlastní) a zároveň, která není jiného bota (uživatelské jméno neobsahuje podřetězec "bot"), odešle tuto zprávu zpátky na kanál a to ve formátu "echo: $\langle$username$\rangle$ - $\langle$message$\rangle$" (kde $\langle$username$\rangle$ představuje uživatelské jméno uživatele, který odeslal původní zprávu).
+
+\subsection{Spuštění programu}
+Použití: isabot [-h$|$-{}-help] [-v$|$-{}-verbose] -t\ $\langle$bot\_access\_token$\rangle$
+
+Pořadí parametrů je libovolné. Popis parametrů:
+
+\begin{itemize}
+	\item Spuštění programu bez parametrů zobrazí nápovědu.
+	\item {-h$|$-{}-help : Vypíše nápovědu na standardní výstup.}
+	\item {-v$|$-{}-verbose : Bude zobrazovat zprávy, na které bot reaguje na standardní výstup ve formátu "$\langle$channel$\rangle$~-~$\langle$username$\rangle$~:~$\langle$message$\rangle$".}
+	\item -t $\langle$bot\_access\_token$\rangle$ : Zde je nutno zadat autentizační token pro přístup bota na Discord.
+\end{itemize}
+
+\subsection{Implementačné nástroje}
+Bot je implementovaný v jazyku \texttt{C++} za pomoci knižnice \texttt{openssl/ssl.h}.
+
+\section{Úvod do problematiky}
+
+\subsection{Discord bot}
+Discord bot je typ uživatele v aplikaci discord, který není reálnym uživatelem ale je mu přiřazen token,
+pomocí kterého se dokáže autorizovat v api poskytaveném discordem a umožňuje tak developerům různých aplikací například vytvářet nebo číst správy v kanálech discordu.
+Pro použití programu je potřeba takového bota vytvořit \cite{dbot}. Při přidávaní bota na server je třeba nastavit práva na: View Channels, Embed Links, Read Message History, Create message.
+
+\subsection{Komunikace pomocí soketu}
+Pro zasílaní dotazů a získavaní odpovědí pomocí api discord serveru je potřeba navázat spojení pomocí soketu. Pro zasílaní jednoduchých HTTP dotazů by stačilo vytvořit soket pomocí knižnice \texttt{sys/socket.h}\cite{socketc} a připojit se na discord server na portu 80. Dicord server ale komunikuje pomocí protokolu HTTPS takže potřebujeme navázat
+zabezpečené spojení pomocí SSL a na portu 443. Na to se dá využit knižnice \texttt{openssl/ssl.h}\cite{ssldocs} a příklad implementace HTTPS klienta se da najít například zde\cite{ssli}.
+
+\subsection{Discord API}
+Api discordu poskytuje celou řadu endpointů. Aplikace využíva jenom ty spomínané v nasledujících podkapitolách.
+Pro používaní api je ale potřeba se autorizovat. To se děje pomocí tokenu bota, který je předán přes konzoli a ku každému požadavku na server je přidána hlavička \texttt{Authorization: Bot $\langle$bot\_access\_token$\rangle$}.
+Discord poskytue dva druhy API. HTTP a Gateway. Aplikace používa HTTP API ale pro správne fungovaní je potřeba bota alespoň jednou připojit přes Gateway\cite{wsconnect}.
+
+\subsubsection{Guildy}
+\texttt{GET /api/users/@me/guilds HTTP/1.1}\\\\
+Tento endpoint vrací pole všech guild, kterých je uživatel členem.
+
+\subsubsection{Kanály}
+\texttt{GET /guilds/\{guild.id\}/channels HTTP/1.1}\\\\
+Tento endpoint vrací pole všech kanálu v rámci dané guildy. Aplikace se připojuje na kanál s názvem isa-bot.
+
+\subsubsection{Správy}
+\texttt{GET /channels/\{channel.id\}/messages?after=\{message.id\} HTTP/1.1}\\\\
+Tento endpoint vrací pole všech správ v rámci daného kanálu. Správy jsou seřazeny od nejnovějši po nejstarší. Ku query je možné dopsat query parametr \texttt{after} s hodnout ID správy a api vrátí jenom správy vytvořené po této správě.
+Každá správa ma ako parametr jméno uživatele, pomocí kterého se da skontrolovat či neobsahuje podřetězec "bot". Také obsahuje paramter "user", který obsahuje parametr "bot", který může být \texttt{true} nebo \texttt{false}.
+
+\subsubsection{Odeslání správy}
+\texttt{POST /channels/\{channel.id\}/messages HTTP/1.1}\\\\
+Tento endpoint slouží pro vytvoření nové správy  rámci daného kanálu.
+
+\section{Návrh aplikace}
+Aplikace nejdříve spracuje argumenty předané přes konzoli. Pak se pokusí vypsat všechny guildy, ke kterým je bot přidán. Vybere první a z ní vypíše všechny kanály. Pokusí se najít textový kanál "isa-bot". Pokud ho najde tak spustí nekonečnou smyčku, ve které nejdříve získá nové správy a pak pro každou vytvoří novou v požadovaném formátu.
+
+\section{Implementace}
+\subsection{Kontrola argumentů}
+Kontroloa argumentů probíha ve funkci \texttt{processArgs}, která projde všechny argumenty programu a v případě, že je nějaký špatný vráti false. V případě že najde argument "-t", bere dalši argument jako token ať je to cokoli.
+
+\subsection{Vytvoření spojení přes soket}
+Spojení přes soket se vytváři pomocí třidy \texttt{DiscordSocket}. Po vytvoření instance třídy se zavolá metoda \texttt{initialize}. Tá pomocí funkce \texttt{getaddrinfo} zistí IPv4 adresu discord serveru a pak vytvoří soket pomocí funkcí z knižnice \texttt{sys/socket.h} \cite{socketc} a ssl spojení pomocí funkcí z kninice \texttt{openssl/ssl.h} \cite{ssldocs}.
+
+\subsection{Získaní ID kanálu}
+Po vytvoření spojení se bot pokusí získat ID kanálu, na kterém bude zachytavát a posílat správy. Nejdřivé odešle dotaz na ednpoint pro získaní guildy a pak pro získaní kanálu. V poli kanálů s epokusí najít kanál "isa-bot" a zkontroluje zda je textový podle parametru "type". Tohle vše se děje ve funkci \texttt{setChannelId} třídy \texttt{DiscordBot}.
+Této třídě je při vytvoření předán token bota, dřívě vytvořen soket a parametr "verbose", který je \texttt{true} nebo \texttt{false}. Objekt kanálu, který je v odpovědi serveru taktéž obsahuje ID poslední správy. To je uložené v property \texttt{lastMsgId} třídy DiscordBot.
+
+\subsection{Spracování správ}
+Po získaní ID kanálu se spustí nekonečná smyčka. Nejdříve se zavolá funkce \texttt{loadNewMessages} třidy DiscordBot, která načte nové správy a uloží ID posledné. Pak se zavolá funkce \texttt{reactToMessages} třídy DiscordBot, která spracuje všechny načtené správy a pro každou znovu uloži novú hodnotu \texttt{lastMsgId} pro případ, že by se nepodařilo je všechny zpracovat. Mezi načítaním nových správ je pauza 1 sekundu. Mezi zpracovaním jednotlivých správ a odesílaním požadavků na server je pauza 200 ms. Bot by tak neměl vyčerpat limity pro počet requestů za určitou dobu. V případě, že se to i tak stane tak server vrátí odpověd \texttt{429 (TOO MANY REQUESTS)}. Pak bot přečte z odpovědi kolik sekund má čekat a tolik i čeká před pokračovaním ve vykonávaní své funkce.
+
+\subsection{Třída HttpResponse}
+Táto třída slouži pro spracovaní odpovědi discord serveru. Spracuje první řádek obsahující protokol, kód a status.
+Pak spracuje hlavičky a uloží ich do hashovací tabulky. Poté předá spracovaní těla odpovědi tříde \texttt{JsonParser}.
+
+\subsection{Třída JsonParser}
+Táto třída spracovává tělo odpovědi discord serveru. Jednotlivé entity ukládá pomocí jednoduchého automatu do třídy \texttt{JsonValue}.
+
+\subsection{Třída JsonValue}
+Táto třída slouží pro uložení JSON hodnot v těle odpovědi serveru. Ukláda jenom pole a objekty a všechny ostatné hodnoty ukládá jako řetězce protože to pro funkcionalitu bota bohatě stačí.
+
+\section{Chybové hlášky}
+\subsection{Error: Nepodařilo se připojít na server}
+Chybová hláška v případě, že se nepodařilo spojit se serverem discord.com.
+
+\subsection{Error: Nepodařilo se vytvořit spojení pomocí soketu}
+Chybová hláška v případě, že se nepodařilo vytvořit soket.
+
+\subsection{Error: Nepodařilo se vytvořit ssl spojení}
+Chybová hláška v případě, že se nepodařilo vytvořit ssl spojení.
+
+\subsection{Error: Nepodařilo se odeslat data}
+Chybová hláška v případě, že se nepodařilo poslat data přes soket. Nespůsobí ukončení programu.
+
+\subsection{Error: Chyba při spracovaní paketu}
+Chybová hláška v případě, že se nepodařilo spracovat data paketu. Nespůsobí ukončení programu.
+
+\subsection{Error: Nepodařilo se uzavřít spojení se serverem}
+Chybová hláška v případě, že se nepodařilo ukončit spojení se serverem pomocí requestu s hlavičou \texttt{Connection: close}.
+
+\subsection{Error: Chyba při čtení paketu}
+Chybová hláška v případě, že se nepodařilo přečíst paket. Nespůsobí ukončení programu.
+
+\subsection{Error: Chyba autorizace. Zkontrolujte token}
+Chyba nastane pokud api vrátí odpověd 401. Teda nejspíš je špatný token.
+
+\subsection{Error: Bot není připojenej na žádnej server}
+Chyba nastane pokud api nevrátí žádnou guildu.
+
+\subsection{Error: Nebyl nalezen kanál isa-bot}
+Chyba nastane pokud api nevrátí textový kanlál isa-bot.
+
+\subsection{Error: Došlo ku chybe pri spracovaní odpovědí discord serveru}
+Chyba, která nastane pokud api nevrátí non-well formed data.
+
+\subsection{Error: Došlo ku chybe při komunikaci s discord serverem}
+Nastane při chybě na straně discord serveru. Api vráti 500 nebo 503...
+
+\subsection{Error: Bot nemá dostatečné práva. Povolte práva View Channels, Send Messages, Read Message History a Embed Links z rozsahu Bot}
+Chyba nastane pokud api vrátí 403, tedy bot nemá nastavená dostatečná práva.
+
+\subsection{Error: Dotaz na neexistujíci url}
+Interní chyba, která nastane při požadavku na špatnou url. Nemělo by se stát.
+
+\subsection{Error: Dotaz špatnou metodou}
+Interní chyba, která nastane při požadavku špatnou metodou. Nemělo by se stát.
+
+\subsection{Error: Neznáma chyba při práci bota}
+Interní chyba, která se nepodařila zachytit. Nemělo by se stát.
+
+\section{Testování}
+Testování probíhalo pomocí testovacího bota a kanálu na discord serveru a taktéž pomocí unit testů implementovaných v souboru \texttt{tests.cpp}. Unit testy byli napsané pro třidy JsonValue, JsonParser a HttpResponse.
+
+\section{Použití programu}
+\subsection{Překlad}
+Překlad a kompilace programu proběhne zadaním příkazu \texttt{make}.
+
+\subsection{Spuštění testů}
+Spuštění unit testů proběhne zadaním příkazu \texttt{make test}.
+
+\subsection{Spuštění programu}
+Před spuštěním je potřeba nejdříve program přeložit. Pak se spustí příkazem \texttt{./isabot -v -t $\langle$bot\_access\_token$\rangle$}
+
+\subsection{Zobrazení nápovědy}
+Pro zobrazení nápovědy je třeba spustit program s přepínačem "-h" nebo "--help". Například \texttt{./isabot -h}
+
+\subsection{Balík pro odevzdání}
+Pomocí příkazu \texttt{make pack} se vytvoří balík pro odevzdání.
+
+\subsection{Vyčištení adresáře}
+Pomocí příkazu \texttt{make clean} se odstrání všechny vygenerované soubory z předešlých příkazů.
+
+\newpage
+
+\begin{thebibliography}{6}
+	\bibitem{dbot} Rapptz. (2015 - 2020). Creating a Bot Account. Dostupné na: \\ \url{https://discordpy.readthedocs.io/en/latest/discord.html}
+	\bibitem{dapi} Discord developer team. Official Discord API Documentation. Dostupné na: \\ \url{https://discord.com/developers/docs/intro}
+	\bibitem{socketc} Silver, Moon. (17. máj 2020). Socket programming in C on Linux – The Ultimate Guide for Beginners. Dostupné na: \\ \url{https://www.binarytides.com/socket-programming-c-linux-tutorial/}
+	\bibitem{ssldocs} OpenSSL Software Foundation. (1999-2018). OpenSSL official documentation. Dostupné na: \\ \url{https://www.openssl.org/docs/}
+	\bibitem{ssli} Kalin, Martin. (19. jún 2019). Getting started with OpenSSL: Cryptography basics. Dostupné na: \\ \url{https://opensource.com/article/19/6/cryptography-basics-openssl-part-1}
+	\bibitem{wsconnect} aequasi. Gateway connector. Dostupné na: \\ \url{https://github.com/restcord/restcord/blob/master/extra/gateway.html}
+\end{thebibliography}
+
+\end{document}

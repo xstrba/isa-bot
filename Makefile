@@ -7,6 +7,7 @@ OBJECTS=DiscordSocket.o DiscordBot.o HttpResponse.o JsonParser.o JsonValue.o
 HEADERS=DiscordSocket.hpp DiscordBot.hpp JsonParser.hpp HttpResponse.hpp JsonValue.hpp
 SOURCES=DiscordSocket.cpp DiscordBot.cpp JsonParser.cpp HttpResponse.cpp JsonValue.cpp
 PACK=xstrba05.tar
+TEX = pdflatex -shell-escape -interaction=nonstopmode -file-line-error
 
 all: ${TARGET}
 
@@ -16,7 +17,12 @@ ${TARGET}: ${OBJECTS} ${TARGET}.o ${HEADERS}
 raw:
 	make clean && make
 
-pack:
+manual: manual.pdf
+
+manual.pdf: manual/manual.tex
+	$(TEX) manual/manual.tex
+
+pack: manual.pdf
 	tar -zcvf ${PACK} ${HEADERS} ${SOURCES} ${TARGET}.cpp tests.cpp Makefile README.md manual.pdf
 
 test: tests
@@ -27,7 +33,4 @@ tests: tests.cpp ${TARGET}
 	${CXX} ${CXXFLAGS} -o tests tests.o
 
 clean:
-	rm -rf ${TARGET}.o ${TARGET} ${OBJECTS} tests tests.o ${PACK}
-
-try: ${TARGET}
-	./${TARGET} -v -t NzY5NjcwODgyNTY5NDg2Mzc2.X5SZ3g.Pw3JEddBOMCyp8VHd10ZnowZ8UY
+	rm -rf ${TARGET}.o ${TARGET} ${OBJECTS} tests tests.o ${PACK} manual.pdf manual.aux manual.log manual.out manual.toc

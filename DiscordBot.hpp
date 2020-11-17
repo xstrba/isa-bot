@@ -13,6 +13,9 @@
 #include <string>
 #include "DiscordSocket.hpp"
 
+/** Type of text channel */
+#define CH_GUILD_TEXT "0"
+
 /**
  * @enum DBotErrors
  * 
